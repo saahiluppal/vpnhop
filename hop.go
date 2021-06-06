@@ -94,14 +94,14 @@ func nordvpn_status(channel chan Status, wg *sync.WaitGroup) {
 }
 
 func nordvpn_connect(country string) (bool, error) {
-    nv_connect := exec.Command("nordvpn", "connect", country)
+	nv_connect := exec.Command("nordvpn", "connect", country)
 
-    err := nv_connect.Run()
-    if err != nil {
-        return false, err
-    } else {
-        return true, nil
-    }
+	err := nv_connect.Run()
+	if err != nil {
+		return false, err
+	} else {
+		return true, nil
+	}
 
 }
 
@@ -173,87 +173,85 @@ const HOP_AFTER = 1 * time.Hour
 
 func main() {
 
-    if HOP_AFTER <= MIN_UPTIME {
-        panic(fmt.Sprintf("Minimum Uptime required is", MIN_UPTIME,
-                    ", But you are trying to hop after", HOP_AFTER))
-    }
+	if HOP_AFTER <= MIN_UPTIME {
+		panic(fmt.Sprintf("Minimum Uptime required is", MIN_UPTIME,
+			", But you are trying to hop after", HOP_AFTER))
+	}
 
-    status, countries, internet := info()
-    if status.Connected == "Connected" {
+	status, countries, internet := info()
+	if status.Connected == "Connected" {
 
-        if internet {
-            if MIN_UPTIME <= status.Uptime {
-                rand.Seed(time.Now().Unix())
-                _, err := nordvpn_connect(countries[rand.Intn(len(countries))])
-                if err != nil {
-                    log.Fatal(err)
-                }
-            } else {
-                fmt.Println("Already Connected to", status.Country)
-                fmt.Println("Minimum Uptime =", MIN_UPTIME, ", Server Uptime =", status.Uptime)
-            }
-        } else {
-            log.Fatal("Connected to VPN but there's no internet connection")
-        }
+		if internet {
+			if MIN_UPTIME <= status.Uptime {
+				rand.Seed(time.Now().Unix())
+				_, err := nordvpn_connect(countries[rand.Intn(len(countries))])
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				fmt.Println("Already Connected to", status.Country)
+				fmt.Println("Minimum Uptime =", MIN_UPTIME, ", Server Uptime =", status.Uptime)
+			}
+		} else {
+			log.Fatal("Connected to VPN but there's no internet connection")
+		}
 
-    } else if status.Connected == "Disconnected" {
+	} else if status.Connected == "Disconnected" {
 
-        if internet {
-            rand.Seed(time.Now().Unix())
-            _, err := nordvpn_connect(countries[rand.Intn(len(countries))])
-            if err != nil {
-                log.Fatal(err)
-            }
-        } else {
-            log.Fatal("Internet not available")
-        }
+		if internet {
+			rand.Seed(time.Now().Unix())
+			_, err := nordvpn_connect(countries[rand.Intn(len(countries))])
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			log.Fatal("Internet not available")
+		}
 
-    } else if status.Connected == "Reconnecting" {
-        log.Fatal("It's Reconnecting, Nordvpn might be frozen")
-    }
+	} else if status.Connected == "Reconnecting" {
+		log.Fatal("It's Reconnecting, Nordvpn might be frozen")
+	}
 
+	ticker := time.NewTicker(HOP_AFTER)
 
+	for range ticker.C {
 
-    ticker := time.NewTicker(HOP_AFTER)
+		fmt.Println("Starting Service")
+		status, countries, internet := info()
+		if status.Connected == "Connected" {
 
-    for range ticker.C {
+			if internet {
+				if MIN_UPTIME <= status.Uptime {
+					rand.Seed(time.Now().Unix())
+					_, err := nordvpn_connect(countries[rand.Intn(len(countries))])
+					if err != nil {
+						log.Fatal(err)
+					}
+				} else {
+					fmt.Println("Already Connected to", status.Country)
+					fmt.Println("Minimum Uptime =", MIN_UPTIME, ", Server Uptime =", status.Uptime)
+				}
+			} else {
+				log.Fatal("Connected to VPN but there's no internet connection")
+			}
 
-        fmt.Println("Starting Service")
-        status, countries, internet := info()
-        if status.Connected == "Connected" {
+		} else if status.Connected == "Disconnected" {
 
-            if internet {
-                if MIN_UPTIME <= status.Uptime {
-                    rand.Seed(time.Now().Unix())
-                    _, err := nordvpn_connect(countries[rand.Intn(len(countries))])
-                    if err != nil {
-                        log.Fatal(err)
-                    }
-                } else {
-                    fmt.Println("Already Connected to", status.Country)
-                    fmt.Println("Minimum Uptime =", MIN_UPTIME, ", Server Uptime =", status.Uptime)
-                }
-            } else {
-                log.Fatal("Connected to VPN but there's no internet connection")
-            }
+			if internet {
+				rand.Seed(time.Now().Unix())
+				_, err := nordvpn_connect(countries[rand.Intn(len(countries))])
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				log.Fatal("Internet not available")
+			}
 
-        } else if status.Connected == "Disconnected" {
+		} else if status.Connected == "Reconnecting" {
+			log.Fatal("It's Reconnecting, Nordvpn might be frozen")
+		}
+		fmt.Println("Stopping Service")
 
-            if internet {
-                rand.Seed(time.Now().Unix())
-                _, err := nordvpn_connect(countries[rand.Intn(len(countries))])
-                if err != nil {
-                    log.Fatal(err)
-                }
-            } else {
-                log.Fatal("Internet not available")
-            }
-
-        } else if status.Connected == "Reconnecting" {
-            log.Fatal("It's Reconnecting, Nordvpn might be frozen")
-        }
-        fmt.Println("Stopping Service")
-
-    }
+	}
 
 }
